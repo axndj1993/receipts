@@ -24,6 +24,14 @@ actually saying anything verifiable?"* before adopting their advice.
 `receipts` is that primitive. It refuses to paraphrase. It just extracts
 and scores.
 
+**Three modes:**
+- **`audit`** — score one video's claims (the v0.1 baseline)
+- **`research`** *(v0.3)* — search YouTube for the top N videos on a
+  topic, audit each, synthesize a cross-video report (reading order,
+  consensus terms, high-evidence claims aggregated across the corpus)
+- **MCP server** *(v0.2)* — `receipts-mcp` exposes audit + transcribe +
+  research as native tools to Claude Code / Cursor / Cline / Codex
+
 ## Install
 
 ```bash
