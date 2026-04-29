@@ -5,6 +5,7 @@ Subcommands:
   transcribe URL      — clean transcript only, print to stdout
   audit URL           — full evidence audit, write Markdown report
   batch FILE          — audit a list of URLs (one per line)
+  research TOPIC      — find + audit + synthesize the top N videos on a topic
 """
 from __future__ import annotations
 
@@ -16,6 +17,7 @@ from pathlib import Path
 from . import __version__
 from .audit import audit, SkeletonVetter
 from .fetcher import FetchError, fetch_video
+from .research import ResearchError, research
 from .transcript import clean_vtt
 
 
@@ -103,6 +105,42 @@ def _slug(url: str) -> str:
     return re.sub(r"[^a-zA-Z0-9]+", "_", url).strip("_")[:40]
 
 
+def _cmd_research(args: argparse.Namespace) -> int:
+    try:
+        report = research(args.topic, n=args.n, domain=args.domain)
+    except ResearchError as e:
+        print(f"receipts: research error: {e}", file=sys.stderr)
+        return 1
+    md = report.to_markdown()
+    if args.output:
+        Path(args.output).write_text(md, encoding="utf-8")
+        print(f"wrote {args.output}", file=sys.stderr)
+    else:
+        print(md)
+    if args.output_dir:
+        out_dir = Path(args.output_dir)
+        out_dir.mkdir(parents=True, exist_ok=True)
+        for r in report.audits:
+            slug = r.metadata.video_id or _slug(r.metadata.url)
+            (out_dir / f"{slug}.md").write_text(
+                r.to_markdown(), encoding="utf-8")
+        (out_dir / "research.md").write_text(md, encoding="utf-8")
+        (out_dir / "index.json").write_text(json.dumps([
+            {
+                "video_id": r.metadata.video_id,
+                "title": r.metadata.title,
+                "channel": r.metadata.channel,
+                "url": r.metadata.url,
+                "verdict": r.verdict,
+                "n_claims": len(r.claims),
+            }
+            for r in report.audits
+        ], indent=2, ensure_ascii=False), encoding="utf-8")
+        print(f"wrote per-video reports + index.json -> {out_dir}",
+              file=sys.stderr)
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(
         prog="receipts",
@@ -138,6 +176,20 @@ def main(argv: list[str] | None = None) -> int:
     p_bt.add_argument("--output-dir", default="receipts_reports",
                       help="output dir for per-video reports + index.json")
     p_bt.set_defaults(func=_cmd_batch)
+
+    p_rs = sub.add_parser(
+        "research",
+        help="find + audit + synthesize the top N YouTube videos on a topic",
+    )
+    p_rs.add_argument("topic", help="topic to research (e.g. 'TSMOM strategies')")
+    p_rs.add_argument("--n", type=int, default=5,
+                      help="number of top videos to audit (default 5)")
+    p_rs.add_argument("--domain", default="general")
+    p_rs.add_argument("-o", "--output", default=None,
+                      help="write the cross-video research report to this file")
+    p_rs.add_argument("--output-dir", default=None,
+                      help="also write per-video reports + index.json here")
+    p_rs.set_defaults(func=_cmd_research)
 
     args = p.parse_args(argv)
     try:

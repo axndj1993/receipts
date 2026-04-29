@@ -32,6 +32,7 @@ except ImportError as e:  # pragma: no cover
 
 from .audit import audit
 from .fetcher import FetchError, fetch_video
+from .research import ResearchError, research
 from .transcript import clean_vtt
 
 
@@ -136,6 +137,79 @@ def receipts_transcribe(url: str, max_chars: int = 20000) -> str:
         "text": text,
         "truncated": truncated,
     }, indent=2)
+
+
+@_mcp.tool()
+def receipts_research(topic: str, n: int = 5, domain: str = "general",
+                       max_chars_per_claim: int = 240) -> str:
+    """Research a topic by auditing the top N YouTube videos on it.
+
+    Searches YouTube for `topic`, audits each of the top N results,
+    then synthesizes a cross-video report:
+
+    - Per-video verdict + claim counts (which is most evidence-rich?)
+    - Reading-order recommendation (highest-evidence first)
+    - High-evidence claims aggregated across videos (the strongest
+      'show me the receipts' moments in the corpus)
+    - Consensus terms — vocabulary appearing across multiple videos
+
+    Use this when the user asks something like "research X on YouTube"
+    or "find me the best videos on Y" — saves them ~30-60 minutes of
+    watching.
+
+    Args:
+        topic: free-form topic string. Will be passed to YouTube
+            search verbatim. Specific is better — "TSMOM time-series
+            momentum strategies" beats "trading".
+        n: number of top results to audit. 3-7 is a good range; >10
+            gets noisy.
+        domain: hint for the per-video vetter.
+        max_chars_per_claim: cap claim text length in the JSON output
+            to keep the agent's context reasonable. Default 240.
+
+    Returns: JSON-encoded research report with reading order, per-
+        video summaries, high-evidence claims, consensus terms, and
+        any fetch failures.
+    """
+    try:
+        report = research(topic, n=n, domain=domain)
+    except ResearchError as e:
+        return json.dumps({"error": str(e)})
+    out: dict[str, Any] = {
+        "topic": report.topic,
+        "domain": report.domain,
+        "n_videos_audited": report.n_videos_audited,
+        "n_videos_failed": report.n_videos_failed,
+        "reading_order": [
+            {
+                "rank": i,
+                "verdict": r.verdict,
+                "claims_count": len(r.claims),
+                "title": r.metadata.title,
+                "channel": r.metadata.channel,
+                "url": r.metadata.url,
+                "duration_pretty": r.metadata.duration_pretty,
+            }
+            for i, r in enumerate(report.reading_order(), 1)
+        ],
+        "high_evidence_claims": [
+            {
+                "title": r.metadata.title,
+                "url": r.metadata.url,
+                "claims": [
+                    {"text": c.text[:max_chars_per_claim],
+                     "evidence_score": c.evidence_score}
+                    for c in r.claims if c.evidence_score >= 2
+                ][:5],
+            }
+            for r in report.high_evidence_audits
+        ],
+        "consensus_terms": [
+            {"term": t, "n_videos": n} for t, n in report.consensus_terms[:20]
+        ],
+        "failures": report.failures,
+    }
+    return json.dumps(out, indent=2)
 
 
 def main() -> None:

@@ -30,12 +30,14 @@ CLI:
     receipts transcribe URL              # clean transcript to stdout
     receipts audit URL [--domain X]      # full evidence audit
     receipts batch FILE                  # batch audit a list of URLs
+    receipts research TOPIC --n 5        # find + audit + synthesize across N videos
 """
 from __future__ import annotations
 
 from .fetcher import VideoMetadata, fetch_video, FetchError
 from .transcript import clean_vtt, Transcript
 from .audit import audit, AuditReport, Vetter, SkeletonVetter
+from .research import research, ResearchReport, ResearchError
 
 __all__ = [
     "audit",
@@ -47,5 +49,8 @@ __all__ = [
     "Vetter",
     "SkeletonVetter",
     "FetchError",
+    "research",
+    "ResearchReport",
+    "ResearchError",
 ]
-__version__ = "0.1.0"
+__version__ = "0.3.0"
