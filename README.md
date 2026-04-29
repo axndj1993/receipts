@@ -13,16 +13,35 @@ actually saying anything verifiable?"* before adopting their advice.
 
 ## Why this exists
 
-- **Most YouTube education is unfalsifiable.** "I made $44K this month"
-  with no audited statement, no sample size, no out-of-sample data.
-- **Summarizers compound the problem** by paraphrasing the unfalsifiable
-  claim into something that *sounds* concise and factual.
+> Today's meta-challenge: YouTube has ~500 hours uploaded *per minute*.
+> A meaningful slice is "expert" content — finance, health, AI,
+> productivity, legal. Most of it is unfalsifiable confidence wearing
+> the costume of expertise. Existing summarizers paraphrase the bad
+> claim into something that *sounds* concrete; AI agents that watch
+> videos for users do the same. There's no fast filter for *"is this
+> person actually showing the receipts?"*
+
+`receipts` is the filter:
+
+- **Most YouTube education is unfalsifiable.** "I made $44K this
+  month" with no audited statement, no sample size, no out-of-sample
+  data.
+- **Summarizers compound the problem** by paraphrasing the
+  unfalsifiable claim into something that *sounds* concise and factual.
 - **AI agents need a claim-extraction primitive** for the same reason
   humans do — you can't compare ten videos on a topic in a useful way
   without first stripping each one down to its asserted claims.
 
-`receipts` is that primitive. It refuses to paraphrase. It just extracts
-and scores.
+`receipts` is that primitive. It refuses to paraphrase. It just
+extracts and scores.
+
+Full motivation, problem framing, features, and roadmap in
+[**docs/why.md**](docs/why.md).
+
+> *Sibling project:* [`tether`](https://github.com/axndj1993/tether) —
+> bidirectional comms for AI agents over Telegram/Slack. Compose the
+> two for mobile-driven workflows: operator shares a YouTube URL via
+> Telegram → agent audits with receipts → result back via tether.
 
 **Three modes:**
 - **`audit`** — score one video's claims (the v0.1 baseline)

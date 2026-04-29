@@ -2,6 +2,7 @@
 
 | Page                                    | What's in it |
 |-----------------------------------------|---|
+| [Why receipts exists](why.md)           | The content firehose, problem framing, what receipts solves, what it isn't, roadmap. |
 | [Installation](installation.md)         | Install receipts, check it works. |
 | [Quickstart](quickstart.md)             | First audit in 5 minutes — single video, batch, Python. |
 | [API reference](api-reference.md)       | Every Python class, dataclass, helper, exception. |
