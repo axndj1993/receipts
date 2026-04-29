@@ -7,9 +7,11 @@ the opposite**: it extracts the speaker's *claims*, scores each one by
 evidence quality (does the claim have a number? a source? a testable
 mechanism?), and produces a brutally honest Markdown audit.
 
-Useful when you watch a lot of "guru" content (trading, health, AI,
-crypto, productivity) and want a 30-second filter for *"is this person
-actually saying anything verifiable?"* before adopting their advice.
+Useful when you (or your AI agent) want a 30-second filter for
+*"is this person actually saying anything verifiable?"* before
+investing 30 minutes watching — across any topic where YouTube is the
+default learning channel: nutrition, AI/ML, productivity, science
+explainers, legal commentary, history, finance, software tutorials.
 
 ## Why this exists
 
@@ -62,39 +64,91 @@ required for the default rule-based vetter.
 
 ## Quickstart
 
+### 1. Research a topic — best-evidence-first reading order
+
+You're curious about *time-restricted eating* and want to learn
+without watching ten videos. One command:
+
 ```bash
-# Audit one video (writes a Markdown report to stdout):
-receipts audit https://youtu.be/0L6Rcgp6j7Y --domain trading -o audit.md
-
-# Just pull the cleaned transcript:
-receipts transcribe https://youtu.be/0L6Rcgp6j7Y
-
-# Audit a list of URLs (one per line):
-echo "https://youtu.be/0L6Rcgp6j7Y" >  urls.txt
-echo "https://youtu.be/abc123"      >> urls.txt
-receipts batch urls.txt --domain trading --output-dir reports/
+receipts research "time-restricted eating science" --n 5 -o trf.md
 ```
 
-The audit report has:
+`trf.md` ranks the top 5 YouTube results best-evidence-first, surfaces
+the high-evidence claims aggregated across the corpus, and shows the
+consensus vocabulary the topic uses. ~30 seconds vs ~3 hours of
+watching.
+
+```markdown
+# Research: time-restricted eating science
+
+| Rank | Verdict        | Claims | Title                                | URL |
+|------|----------------|--------|--------------------------------------|-----|
+| 1    | MIXED          | 18     | A 5-yr randomized trial of TRE       | ... |
+| 2    | LOW_EVIDENCE   | 12     | I Tried Fasting for 30 Days          | ... |
+| 3    | LOW_EVIDENCE   | 8      | Fasting Mistakes That'll Ruin You    | ... |
+| 4    | UNSUPPORTED    | 4      | Why You Should NEVER Fast            | ... |
+| 5    | UNSUPPORTED    | 2      | The Truth About Fasting              | ... |
+
+## High-evidence claims across the topic
+[verbatim quotes from video #1, with evidence_score >= 2/3]
+
+## Consensus terms (across multiple videos)
+| Term              | Videos |
+|-------------------|--------|
+| circadian         | 4      |
+| insulin           | 3      |
+| autophagy         | 3      |
+| ...
+```
+
+You watch video #1 (the only `MIXED` evidence one), skim #2-3, ignore
+#4-5.
+
+### 2. Audit one video — quick verdict before committing 30 min
+
+```bash
+receipts audit https://www.youtube.com/watch?v=<id> -o audit.md
+```
+
+Returns the same shape as one entry of the research report:
+verdict + claims table + vetter notes + transcript.
+
+### 3. Just the transcript — no audit, no paraphrase
+
+```bash
+receipts transcribe https://www.youtube.com/watch?v=<id>
+```
+
+Use it for citation, search, or feeding into a different downstream
+LLM step.
+
+## What's in the audit report
+
 - **Metadata** — title, channel, upload date, duration, views.
 - **Verdict** — `HIGH_EVIDENCE` / `MIXED` / `LOW_EVIDENCE` / `UNSUPPORTED`.
 - **Claims table** — every claim-like sentence + score on three axes:
-  - has number? (5%, 1.5x, $1500, n=42, ...)
-  - has source? (study, paper, n=N, OOS, sharpe, win-rate, ...)
-  - testable? (conditional / declarative — "when X, do Y")
+  - has number? (5%, 1.5x, n=42, $1500, ...)
+  - has source? (study, paper, OOS, win-rate, audited statement, ...)
+  - testable? (declarative + conditional — "when X, do Y")
 - **Vetter notes** — caveats and recommendations.
-- **Full transcript** — for citation.
+- **Full transcript** — verbatim, for citation.
 
 ## Python usage
 
 ```python
-from receipts import audit
+from receipts import audit, research
 
-report = audit("https://youtu.be/0L6Rcgp6j7Y", domain="trading")
-print(report.verdict)            # 'MIXED'
-for c in report.claims:
-    print(c.evidence_score, c.text[:80])
-print(report.to_markdown())
+# Single-video audit
+r = audit("https://youtu.be/<id>")
+print(r.verdict)                    # 'MIXED'
+high = [c for c in r.claims if c.evidence_score >= 2]
+print(f"{len(high)} high-evidence claims")
+
+# Topic research — top N → audit each → synthesize
+res = research("transformers attention mechanism", n=5)
+for r in res.reading_order():
+    print(f"{r.verdict:15} {r.metadata.title}")
+print(res.to_markdown())
 ```
 
 ## Pluggable vetters
@@ -104,36 +158,47 @@ audits, plug in a domain-specialized vetter (LLM-backed, web-search-
 augmented, citation-aware):
 
 ```python
-from receipts import audit, fetch_video, clean_vtt
+from receipts import audit, AuditReport
 
-class TradingVetter:
-    """Knows what real backtest evidence looks like."""
+class HealthVetter:
+    """Cross-references claims against PubMed + Cochrane Library."""
     def vet(self, metadata, transcript, *, domain):
-        # ... LLM call, web search, citation lookup ...
+        # extract claims via LLM
+        # for each quantitative claim, search PubMed
+        # tag claims by 'cited / citable / unsupported'
         return AuditReport(...)
 
-report = audit(url, vetter=TradingVetter())
+report = audit(url, vetter=HealthVetter())
 ```
+
+Vetters implement the `Vetter` protocol — see [docs/api-reference.md].
 
 Vetters implement the `Vetter` protocol — see [docs/api-reference.md].
 
 ## Use as a Claude Code Skill
 
-Drop a Skill definition that wraps `receipts audit` so Claude can do
-"watch + audit" loops on demand:
+Drop a Skill definition that wraps `receipts` so Claude can do
+"watch + audit" loops AND topic research on demand:
 
 ```markdown
 ---
 name: receipts-audit
-description: Use when the user shares a YouTube URL and asks "what's in this?" or "is this any good?" Audits the video's claims for evidence quality.
+description: Use when the user (a) shares a YouTube URL and asks "what's in this?" / "is this any good?", or (b) asks to research a topic ("find the best videos on X"). Audits claims for evidence quality and ranks results best-evidence-first.
 ---
 
 # Skill rules
-1. Call `receipts audit URL --domain <inferred> -o /tmp/audit_<id>.md`.
-2. Read the audit report, surface the verdict + 3-5 highest/lowest
-   scoring claims back to the user.
-3. Keep the report on disk for follow-up.
+1. **Single URL** → `receipts audit URL -o /tmp/audit_<id>.md`.
+   Surface the verdict + 3-5 highest/lowest scoring claims to the user.
+2. **Topic research** → `receipts research "TOPIC" --n 5 --output-dir /tmp/r/`.
+   Surface the reading order + the high-evidence claims aggregated
+   across the corpus.
+3. Keep reports on disk for follow-up questions.
 ```
+
+Or skip the Skill — install [`receipts-mcp`](docs/mcp.md) and Claude
+Code (or Cursor/Cline/Codex) gets `receipts_audit` /
+`receipts_transcribe` / `receipts_research` as native tools with no
+glue code.
 
 ## Limits + non-goals
 
@@ -151,10 +216,13 @@ description: Use when the user shares a YouTube URL and asks "what's in this?" o
 
 ## Documentation
 
+- [Why receipts exists](docs/why.md) — full motivation + roadmap
 - [Installation](docs/installation.md)
 - [Quickstart](docs/quickstart.md)
 - [API reference](docs/api-reference.md)
 - [CLI reference](docs/cli-reference.md)
+- [MCP server](docs/mcp.md) — drop into Claude Code / Cursor / etc
+- [Research mode](docs/research.md) — topic → top N → synthesize
 - [Recipes](docs/recipes.md)
 - [Architecture](docs/architecture.md)
 - [Troubleshooting](docs/troubleshooting.md)
