@@ -53,6 +53,41 @@ Full motivation, problem framing, features, and roadmap in
 - **MCP server** *(v0.2)* — `receipts-mcp` exposes audit + transcribe +
   research as native tools to Claude Code / Cursor / Cline / Codex
 
+## Use cases
+
+`receipts` shines anywhere you'd otherwise watch 5–10 videos to learn
+or evaluate a topic. A quick sample (full list + worked examples in
+[docs/use-cases.md](docs/use-cases.md)):
+
+- **Skim my watch-later queue.** Audit 50 queued URLs, sort by
+  evidence quality, watch the top 5; skip the rest.
+- **Pre-watch filter for paid courses.** Audit the free preview
+  before spending $200 on Udemy / Coursera / Skillshare.
+- **"What's the consensus on X?"** Research a topic across the top
+  N videos; surface evidence-backed claims, consensus vocabulary,
+  and reading order. Beats reading 10 articles.
+- **Personal learning archive.** Every video you watch goes through
+  `receipts batch`; commit audits to a private git repo. Months
+  later you can grep `HIGH_EVIDENCE` videos on any topic — a curated
+  learning corpus, not a YouTube history list.
+- **Topic-evolution tracking.** Re-research the same topic every 3
+  months; track how the consensus + evidence quality shifts. Useful
+  for fast-moving fields (AI, biotech, crypto).
+- **Creator accountability score.** Audit a channel's last 20
+  videos; compute average evidence quality. Calibrate trust by data,
+  not by vibes / subscriber count.
+- **Paper-explanation ranker.** Famous paper drops, 30 "[paper]
+  explained" videos within a week. `receipts research` ranks them by
+  whether they actually engage with the math.
+- **Anti-grift filter for finance.** Pipe trading/crypto YouTube
+  through `receipts batch`; alert only on `HIGH_EVIDENCE`. Years of
+  due diligence collapsed into a daily filter.
+
+The unifying pattern: *I'd otherwise watch N videos to make a
+decision; replace with N audits + watching the top 1–2.* Time
+saved: ~80%. Confidence: higher (you're picking on evidence
+quality, not thumbnails). And the audits stay queryable later.
+
 ## Install
 
 ```bash
