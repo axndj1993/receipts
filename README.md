@@ -1,196 +1,167 @@
 # receipts
 
-> Turn any YouTube video into an evidence audit.
+> Show me the receipts. Turn any YouTube video into an evidence audit.
 
-Most "summarize this video" tools paraphrase the speaker. **receipts does
-the opposite**: it extracts the speaker's *claims*, scores each one by
-evidence quality (does the claim have a number? a source? a testable
-mechanism?), and produces a brutally honest Markdown audit.
+You bookmark 50 videos a month to "learn from later" — and never
+watch them. You consider a $200 paid course but don't know if it's
+any good. Someone shares a link with "this changed how I think
+about X" — and now you owe them a polite watch. You're researching a
+topic and somehow it's 11pm and you've watched 7 vague videos in a
+row.
 
-Useful when you (or your AI agent) want a 30-second filter for
-*"is this person actually saying anything verifiable?"* before
-investing 30 minutes watching — across any topic where YouTube is the
-default learning channel: nutrition, AI/ML, productivity, science
-explainers, legal commentary, history, finance, software tutorials.
+The thing in common: you can't tell from the thumbnail / title /
+runtime whether a video has *receipts* — actual numbers, sources,
+testable claims — versus 30 minutes of confidence wearing the
+costume of expertise.
 
-## Why this exists
+`receipts` is the filter. Feed it a URL or a topic; it extracts
+every claim the speaker makes, scores each on three axes (has a
+*number*? a *source*? a *testable rule*?), and produces a Markdown
+audit ranked best-evidence-first.
 
-> Today's meta-challenge: YouTube has ~500 hours uploaded *per minute*.
-> A meaningful slice is "expert" content — finance, health, AI,
-> productivity, legal. Most of it is unfalsifiable confidence wearing
-> the costume of expertise. Existing summarizers paraphrase the bad
-> claim into something that *sounds* concrete; AI agents that watch
-> videos for users do the same. There's no fast filter for *"is this
-> person actually showing the receipts?"*
+```
+$ receipts audit https://youtu.be/<id> --domain trading
 
-`receipts` is the filter:
+# Audit: I made $44K This Month with One Setup
 
-- **Most YouTube education is unfalsifiable.** "I made $44K this
-  month" with no audited statement, no sample size, no out-of-sample
-  data.
-- **Summarizers compound the problem** by paraphrasing the
-  unfalsifiable claim into something that *sounds* concise and factual.
-- **AI agents need a claim-extraction primitive** for the same reason
-  humans do — you can't compare ten videos on a topic in a useful way
-  without first stripping each one down to its asserted claims.
+**Verdict:** `LOW_EVIDENCE` (1 claim with a number, 0 with sources)
 
-`receipts` is that primitive. It refuses to paraphrase. It just
-extracts and scores.
+| # | Claim                                  | Number? | Source? | Testable? | Score |
+|---|----------------------------------------|---------|---------|-----------|-------|
+| 1 | "I made $44k this month"               | Y       | N       | N         | 1/3   |
+| 2 | "70% win rate on this setup"           | Y       | N       | Y         | 2/3   |
+| 3 | "the market always reverts"            | N       | N       | Y         | 1/3   |
+...
+```
 
-Full motivation, problem framing, features, and roadmap in
-[**docs/why.md**](docs/why.md).
+Skip the video. Five seconds saved you a 27-minute commitment.
+
+---
+
+## What people use it for
+
+**Skim your watch-later queue.** Audit 50 queued URLs, sort by
+verdict, watch the top 5. Skip the rest.
+
+**Pre-screen paid courses.** Audit the free preview before spending
+$200 on Udemy / Coursera / Skillshare.
+
+**Topic research, ranked by evidence.** Tell receipts to find the
+top 7 YouTube videos on *intermittent fasting science* — it audits
+each, gives you a reading-order best-evidence-first, surfaces the
+high-evidence claims aggregated across the corpus, and shows the
+canonical vocabulary the topic uses. ~5 minutes vs ~3 hours of
+trial-and-error watching.
+
+**Spot grift in finance / health / AI YouTube.** Pipe a creator's
+last 30 videos through `receipts batch`; aggregate verdict
+distribution = trust calibrated by data, not subscriber count.
+
+**Build a permanent learning archive.** Every video you watch goes
+through receipts; commit the audits to a private git repo. Six
+months later you can grep your archive — *every HIGH_EVIDENCE video
+on machine learning I saved this year* — a curated, evidence-graded
+learning corpus, not a YouTube history list.
+
+**Track topic evolution.** Re-research the same topic every 3
+months; verdicts shifting from MIXED to HIGH_EVIDENCE = field
+maturing. Useful for fast-moving fields (AI, biotech, crypto).
+
+Full per-persona examples in [**docs/use-cases.md**](docs/use-cases.md)
+(student, developer, AI engineer, trader, researcher, educator,
+investor, journalist, health, generic learner — 30+ patterns).
 
 > *Sibling project:* [`tether`](https://github.com/axndj1993/tether) —
-> bidirectional comms for AI agents over Telegram/Slack. Compose the
-> two for mobile-driven workflows: operator shares a YouTube URL via
-> Telegram → agent audits with receipts → result back via tether.
+> bidirectional Telegram/Slack comms for AI agents. Compose the two:
+> share a YouTube URL via Telegram → agent audits with receipts →
+> result back via tether. Mobile-driven, ~15 lines of agent logic.
 
-**Three modes:**
-- **`audit`** — score one video's claims (the v0.1 baseline)
-- **`research`** *(v0.3)* — search YouTube for the top N videos on a
-  topic, audit each, synthesize a cross-video report (reading order,
-  consensus terms, high-evidence claims aggregated across the corpus)
-- **MCP server** *(v0.2)* — `receipts-mcp` exposes audit + transcribe +
-  research as native tools to Claude Code / Cursor / Cline / Codex
+---
 
-## Use cases
+## What problem this solves
 
-`receipts` shines anywhere you'd otherwise watch 5–10 videos to learn
-or evaluate a topic. A quick sample (full list + worked examples in
-[docs/use-cases.md](docs/use-cases.md)):
+YouTube has roughly **500 hours uploaded per minute**. A meaningful
+slice is "expert" content — finance, health, AI, productivity,
+legal, political. Most of it is **unfalsifiable confidence wearing
+the costume of expertise**: no quantified evidence, no sources, no
+sample sizes, no out-of-sample data, no conflicts-of-interest
+disclosed.
 
-- **Skim my watch-later queue.** Audit 50 queued URLs, sort by
-  evidence quality, watch the top 5; skip the rest.
-- **Pre-watch filter for paid courses.** Audit the free preview
-  before spending $200 on Udemy / Coursera / Skillshare.
-- **"What's the consensus on X?"** Research a topic across the top
-  N videos; surface evidence-backed claims, consensus vocabulary,
-  and reading order. Beats reading 10 articles.
-- **Personal learning archive.** Every video you watch goes through
-  `receipts batch`; commit audits to a private git repo. Months
-  later you can grep `HIGH_EVIDENCE` videos on any topic — a curated
-  learning corpus, not a YouTube history list.
-- **Topic-evolution tracking.** Re-research the same topic every 3
-  months; track how the consensus + evidence quality shifts. Useful
-  for fast-moving fields (AI, biotech, crypto).
-- **Creator accountability score.** Audit a channel's last 20
-  videos; compute average evidence quality. Calibrate trust by data,
-  not by vibes / subscriber count.
-- **Paper-explanation ranker.** Famous paper drops, 30 "[paper]
-  explained" videos within a week. `receipts research` ranks them by
-  whether they actually engage with the math.
-- **Anti-grift filter for finance.** Pipe trading/crypto YouTube
-  through `receipts batch`; alert only on `HIGH_EVIDENCE`. Years of
-  due diligence collapsed into a daily filter.
+Two existing approaches both fail at scale:
 
-The unifying pattern: *I'd otherwise watch N videos to make a
-decision; replace with N audits + watching the top 1–2.* Time
-saved: ~80%. Confidence: higher (you're picking on evidence
-quality, not thumbnails). And the audits stay queryable later.
+- **Watch the whole video.** Doesn't scale. You can't evaluate 50
+  videos a week this way, and most aren't worth a 30-minute
+  commitment in the first place.
+
+- **Use a summarizer / NotebookLM-style tool.** These *paraphrase*
+  the unfalsifiable claim into something that *sounds* concrete —
+  making the bad content *more* believable, not less. The summary
+  smooths over the speaker's missing receipts.
+
+`receipts` does the opposite. It refuses to paraphrase. It just
+extracts the claims verbatim and scores them.
+
+Full motivation, problem framing, features, roadmap in
+[**docs/why.md**](docs/why.md).
+
+---
+
+## Three modes
+
+- **`audit URL`** — score one video's claims (the v0.1 baseline).
+- **`research "topic" --n 7`** — search YouTube for the top N
+  videos on a topic, audit each, synthesize cross-video reading
+  order + consensus terms + aggregated high-evidence claims.
+  *(v0.3)*
+- **MCP server** — `receipts-mcp` exposes audit + transcribe +
+  research as native tools to Claude Code / Cursor / Cline / Codex.
+  *(v0.2)*
 
 ## Install
 
 ```bash
-pip install receipts
+pip install receipts            # core
+pip install 'receipts[mcp]'      # + MCP server
 ```
 
-`yt-dlp` is a dependency and gets installed automatically. No API keys
-required for the default rule-based vetter.
+`yt-dlp` is a dependency and gets installed automatically. No API
+keys required for the default rule-based vetter.
 
-## Quickstart
-
-### 1. Research a topic — best-evidence-first reading order
-
-You're curious about *time-restricted eating* and want to learn
-without watching ten videos. One command:
+## 60-second start
 
 ```bash
-receipts research "time-restricted eating science" --n 5 -o trf.md
+# Audit one video (writes a Markdown report to stdout):
+receipts audit https://youtu.be/<id> -o audit.md
+
+# Research a topic — best-evidence-first reading order:
+receipts research "transformers attention mechanism" --n 7 -o syllabus.md
+
+# Audit a batch of URLs, get an index.json with verdicts:
+receipts batch urls.txt --output-dir reports/
 ```
 
-`trf.md` ranks the top 5 YouTube results best-evidence-first, surfaces
-the high-evidence claims aggregated across the corpus, and shows the
-consensus vocabulary the topic uses. ~30 seconds vs ~3 hours of
-watching.
-
-```markdown
-# Research: time-restricted eating science
-
-| Rank | Verdict        | Claims | Title                                | URL |
-|------|----------------|--------|--------------------------------------|-----|
-| 1    | MIXED          | 18     | A 5-yr randomized trial of TRE       | ... |
-| 2    | LOW_EVIDENCE   | 12     | I Tried Fasting for 30 Days          | ... |
-| 3    | LOW_EVIDENCE   | 8      | Fasting Mistakes That'll Ruin You    | ... |
-| 4    | UNSUPPORTED    | 4      | Why You Should NEVER Fast            | ... |
-| 5    | UNSUPPORTED    | 2      | The Truth About Fasting              | ... |
-
-## High-evidence claims across the topic
-[verbatim quotes from video #1, with evidence_score >= 2/3]
-
-## Consensus terms (across multiple videos)
-| Term              | Videos |
-|-------------------|--------|
-| circadian         | 4      |
-| insulin           | 3      |
-| autophagy         | 3      |
-| ...
-```
-
-You watch video #1 (the only `MIXED` evidence one), skim #2-3, ignore
-#4-5.
-
-### 2. Audit one video — quick verdict before committing 30 min
-
-```bash
-receipts audit https://www.youtube.com/watch?v=<id> -o audit.md
-```
-
-Returns the same shape as one entry of the research report:
-verdict + claims table + vetter notes + transcript.
-
-### 3. Just the transcript — no audit, no paraphrase
-
-```bash
-receipts transcribe https://www.youtube.com/watch?v=<id>
-```
-
-Use it for citation, search, or feeding into a different downstream
-LLM step.
-
-## What's in the audit report
-
-- **Metadata** — title, channel, upload date, duration, views.
-- **Verdict** — `HIGH_EVIDENCE` / `MIXED` / `LOW_EVIDENCE` / `UNSUPPORTED`.
-- **Claims table** — every claim-like sentence + score on three axes:
-  - has number? (5%, 1.5x, n=42, $1500, ...)
-  - has source? (study, paper, OOS, win-rate, audited statement, ...)
-  - testable? (declarative + conditional — "when X, do Y")
-- **Vetter notes** — caveats and recommendations.
-- **Full transcript** — verbatim, for citation.
-
-## Python usage
+## Python
 
 ```python
 from receipts import audit, research
 
-# Single-video audit
+# Single video
 r = audit("https://youtu.be/<id>")
-print(r.verdict)                    # 'MIXED'
+print(r.verdict)                          # 'MIXED'
 high = [c for c in r.claims if c.evidence_score >= 2]
 print(f"{len(high)} high-evidence claims")
 
-# Topic research — top N → audit each → synthesize
-res = research("transformers attention mechanism", n=5)
+# Topic research
+res = research("LLM agent design patterns", n=5)
 for r in res.reading_order():
     print(f"{r.verdict:15} {r.metadata.title}")
-print(res.to_markdown())
 ```
 
 ## Pluggable vetters
 
-The default `SkeletonVetter` is rule-based and runs offline. For deeper
-audits, plug in a domain-specialized vetter (LLM-backed, web-search-
-augmented, citation-aware):
+The default `SkeletonVetter` is rule-based and runs offline. For
+deeper audits, plug in a domain-specialized vetter (LLM-backed,
+web-search-augmented, citation-aware):
 
 ```python
 from receipts import audit, AuditReport
@@ -200,67 +171,44 @@ class HealthVetter:
     def vet(self, metadata, transcript, *, domain):
         # extract claims via LLM
         # for each quantitative claim, search PubMed
-        # tag claims by 'cited / citable / unsupported'
         return AuditReport(...)
 
 report = audit(url, vetter=HealthVetter())
 ```
 
-Vetters implement the `Vetter` protocol — see [docs/api-reference.md].
+Vetters implement the `Vetter` protocol — see
+[docs/api-reference.md](docs/api-reference.md).
 
-Vetters implement the `Vetter` protocol — see [docs/api-reference.md].
+## What receipts is NOT
 
-## Use as a Claude Code Skill
+- **Not a summarizer.** Other tools paraphrase; receipts extracts
+  verbatim. If you want a summary, ask an LLM directly with the
+  transcript.
 
-Drop a Skill definition that wraps `receipts` so Claude can do
-"watch + audit" loops AND topic research on demand:
+- **Not a fact-checker.** The default vetter scores *evidence
+  quality* (does a number exist?), not *truth* (is the number
+  correct?). For external corroboration, plug in an LLM-backed
+  vetter with web search.
 
-```markdown
----
-name: receipts-audit
-description: Use when the user (a) shares a YouTube URL and asks "what's in this?" / "is this any good?", or (b) asks to research a topic ("find the best videos on X"). Audits claims for evidence quality and ranks results best-evidence-first.
----
-
-# Skill rules
-1. **Single URL** → `receipts audit URL -o /tmp/audit_<id>.md`.
-   Surface the verdict + 3-5 highest/lowest scoring claims to the user.
-2. **Topic research** → `receipts research "TOPIC" --n 5 --output-dir /tmp/r/`.
-   Surface the reading order + the high-evidence claims aggregated
-   across the corpus.
-3. Keep reports on disk for follow-up questions.
-```
-
-Or skip the Skill — install [`receipts-mcp`](docs/mcp.md) and Claude
-Code (or Cursor/Cline/Codex) gets `receipts_audit` /
-`receipts_transcribe` / `receipts_research` as native tools with no
-glue code.
-
-## Limits + non-goals
-
-- **receipts doesn't watch the video** — it reads the auto-generated
-  captions YouTube produces. Visual-only content (charts, code on
-  screen) is invisible to it.
-- **receipts doesn't paraphrase.** A "summary" in receipts's report is the
-  literal first 800 characters of the transcript, not a rewrite.
-- **receipts doesn't fact-check the world** — the default vetter scores
-  the *quality* of evidence (does a number exist?), not the *truth* of
-  the claim. Plug in an LLM-backed vetter with web search if you want
-  external corroboration.
-- **No videos without captions.** If YouTube has no auto-caption track
-  in the requested language, receipts errors out with a clear message.
+- **Not a video downloader.** Captions only — never downloads the
+  video. ffmpeg not required.
 
 ## Documentation
 
-- [Why receipts exists](docs/why.md) — full motivation + roadmap
-- [Installation](docs/installation.md)
-- [Quickstart](docs/quickstart.md)
-- [API reference](docs/api-reference.md)
-- [CLI reference](docs/cli-reference.md)
-- [MCP server](docs/mcp.md) — drop into Claude Code / Cursor / etc
-- [Research mode](docs/research.md) — topic → top N → synthesize
-- [Recipes](docs/recipes.md)
-- [Architecture](docs/architecture.md)
-- [Troubleshooting](docs/troubleshooting.md)
+| Page                                    | What's in it |
+|-----------------------------------------|---|
+| [Why receipts](docs/why.md)             | Full motivation + roadmap |
+| [Use cases](docs/use-cases.md)          | 30+ patterns by persona (student / developer / AI engineer / trader / researcher / educator / etc.) |
+| [Installation](docs/installation.md)    | Install + verify |
+| [Quickstart](docs/quickstart.md)        | 5-minute walkthrough |
+| [API reference](docs/api-reference.md)  | Every Python class/method |
+| [CLI reference](docs/cli-reference.md)  | Every subcommand/flag |
+| [Integrations](docs/integrations.md)    | Step-by-step for Claude Code, Cursor, Cline, Codex, Continue.dev, Zed, Anthropic SDK, plain Python, CI |
+| [MCP server](docs/mcp.md)               | Drop receipts into MCP-aware clients as native tools |
+| [Research mode](docs/research.md)       | Topic → top N → synthesize |
+| [Recipes](docs/recipes.md)              | Cookbook: playlist audit, knowledge base, LLM-backed vetter |
+| [Architecture](docs/architecture.md)    | Pipeline, Vetter protocol, extension points |
+| [Troubleshooting](docs/troubleshooting.md) | yt-dlp errors, missing captions, false-positive verdicts |
 
 ## License
 
