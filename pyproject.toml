@@ -29,6 +29,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=7", "pytest-cov"]
+mcp = ["mcp>=1.0"]
 
 [project.urls]
 Homepage = "https://github.com/axndj1993/receipts"
@@ -36,6 +37,7 @@ Issues = "https://github.com/axndj1993/receipts/issues"
 
 [project.scripts]
 receipts = "receipts.cli:main"
+receipts-mcp = "receipts.mcp_server:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
