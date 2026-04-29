@@ -8,6 +8,7 @@
 | [API reference](api-reference.md)       | Every Python class, dataclass, helper, exception. |
 | [CLI reference](cli-reference.md)       | Every subcommand and flag. |
 | [MCP server](mcp.md)                    | **v0.2** — drop receipts into Claude Code / Cursor / Cline / Codex as native tools (audit + transcribe + research). |
+| [Integrations](integrations.md)         | Step-by-step setup for Claude Code, Cursor, Cline, Codex, Continue.dev, Zed, Anthropic SDK, plain Python, CI. |
 | [Research mode](research.md)            | **v0.3** — `receipts research "topic" --n 5` — search YouTube + audit + synthesize cross-video. |
 | [Recipes](recipes.md)                   | Cookbook: playlist audit, video knowledge base, LLM-backed vetter, etc. |
 | [Architecture](architecture.md)         | Pipeline stages, Vetter protocol, extension points. |
