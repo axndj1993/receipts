@@ -61,6 +61,41 @@ receipts batch urls.txt --domain trading --output-dir reports/
 Failed URLs are recorded in `index.json` with an `error` field; the
 batch continues past failures.
 
+## `receipts install HOST [options]`
+
+Auto-write the receipts MCP server block into an AI agent host's
+config. Idempotent — re-running overwrites only the `receipts` entry,
+preserving any other servers (e.g. `tether`) already configured.
+
+| Option           | Default     | Meaning |
+|------------------|-------------|---------|
+| `HOST`           | required    | one of `claude-code`, `cursor`, `cline`, `codex`, `continue`, `zed` |
+| `--config-path`  | per-host    | explicit MCP config path (overrides the per-host convention) |
+| `--server-name`  | `receipts`  | key under `mcpServers` (rename if you have multiple receipts servers) |
+
+```bash
+cd <your-project>
+receipts install claude-code
+# wrote receipts MCP block to .mcp.json (Claude Code)
+
+receipts install cursor                       # writes .cursor/mcp.json (cwd) or ~/.cursor/mcp.json
+receipts install codex --server-name receipts # writes ~/.codex/mcp.json
+```
+
+**Per-host config paths** the installer writes to:
+
+| Host          | Path |
+|---------------|------|
+| `claude-code` | `.mcp.json` at project root (NOT `.claude/mcp.json` — Claude Code silently ignores that) |
+| `cursor`      | `.cursor/mcp.json` (project, preferred) or `~/.cursor/mcp.json` (global) |
+| `cline`       | `.cline-mcp.json` sidecar (copy into VS Code's Cline settings) |
+| `codex`       | `.codex/mcp.json` (project) or `~/.codex/mcp.json` (global) |
+| `continue`    | `.continue/config.yaml` (project) or `~/.continue/config.yaml` (global) — requires PyYAML |
+| `zed`         | `.zed-mcp.json` sidecar (copy into Zed settings) |
+
+After install, restart the host. For Claude Code, run `/mcp` to verify
+the `receipts` server is connected.
+
 ## `receipts --version`
 
 Print the receipts version and exit.

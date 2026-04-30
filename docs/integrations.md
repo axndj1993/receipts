@@ -16,8 +16,18 @@ restart. Done. The agent now has `receipts_audit` /
 
 ## Claude Code
 
-**Config file:** `.claude/mcp.json` (per project) or
-`~/.claude/mcp.json` (global).
+**One-liner (recommended):**
+
+```bash
+cd <your-project>
+receipts install claude-code
+```
+
+That writes (or merges into) `.mcp.json` at the project root. Existing
+servers (e.g. `tether`) are preserved.
+
+**Manual:** edit `.mcp.json` at the project root (NOT
+`.claude/mcp.json` — Claude Code silently ignores that path):
 
 ```json
 {
@@ -28,6 +38,10 @@ restart. Done. The agent now has `receipts_audit` /
   }
 }
 ```
+
+> User-scope (global, all projects) lives inside `~/.claude.json` —
+> manage via `claude mcp add -s user receipts -- receipts-mcp`, not by
+> editing a standalone file.
 
 Restart the Claude Code session. Run `/mcp` — you should see
 `receipts` listed with three tools (`receipts_audit`,

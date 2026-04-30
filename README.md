@@ -140,6 +140,25 @@ receipts research "transformers attention mechanism" --n 7 -o syllabus.md
 receipts batch urls.txt --output-dir reports/
 ```
 
+## Use it from Claude Code (or Cursor / Cline / Codex / Continue / Zed)
+
+One-liner to wire the MCP server into your AI host's config:
+
+```bash
+cd <your-project>
+receipts install claude-code            # writes .mcp.json (project root)
+# or: receipts install cursor / cline / codex / continue / zed
+```
+
+Restart the host. In Claude Code, `/mcp` should now list `receipts`
+with the three tools (`receipts_audit`, `receipts_transcribe`,
+`receipts_research`). The agent can call them directly when you
+share a YouTube URL or ask for topic research.
+
+Existing servers in your config (e.g. `tether`) are preserved — the
+installer only writes/overwrites the `receipts` entry. Full
+per-host paths in [docs/cli-reference.md](docs/cli-reference.md#receipts-install-host-options).
+
 ## Python
 
 ```python

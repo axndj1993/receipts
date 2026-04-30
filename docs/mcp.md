@@ -10,9 +10,11 @@ Most agents today, when given a YouTube URL, can only:
 1. Acknowledge the URL.
 2. Call a generic web-search to find a summary.
 
-With `receipts-mcp` configured, the agent gains two native tools that
-turn a YouTube URL into a structured, evidence-scored Markdown report
-in one tool call — no glue code, no shelling out.
+With `receipts-mcp` configured, the agent gains three native tools
+(`receipts_audit`, `receipts_transcribe`, `receipts_research`) that
+turn a YouTube URL — or a research topic — into a structured,
+evidence-scored Markdown report in one tool call. No glue code, no
+shelling out.
 
 ## Install
 
@@ -24,7 +26,18 @@ This installs an additional console script: `receipts-mcp`.
 
 ## Configure Claude Code
 
-Edit `.claude/mcp.json`:
+**One-liner:**
+
+```bash
+cd <your-project>
+receipts install claude-code
+```
+
+That writes/merges into `.mcp.json` at the project root and preserves
+any other `mcpServers` already configured.
+
+**Manual:** edit `.mcp.json` at the project root (NOT
+`.claude/mcp.json` — Claude Code silently ignores that path):
 
 ```json
 {
@@ -90,6 +103,28 @@ the words verbatim (citation, search, downstream LLM step).
   "word_count": 1544,
   "text": "price action probably one of the most important...",
   "truncated": false
+}
+```
+
+### `receipts_research(topic, n=5, domain="general") -> str`
+
+Find the top `n` YouTube videos on a topic, audit each, and return a
+ranked best-evidence-first synthesis. Use when the user asks the
+agent to research a topic via YouTube ("what does YouTube say about
+intermittent fasting?", "find the most evidence-based videos on
+TSMOM").
+
+```
+> receipts_research(topic="TSMOM strategies", n=5, domain="trading")
+{
+  "topic": "TSMOM strategies",
+  "n_audited": 5,
+  "ranked": [
+    {"verdict": "HIGH_EVIDENCE", "title": "...", "url": "..."},
+    {"verdict": "MIXED",         "title": "...", "url": "..."},
+    ...
+  ],
+  "synthesis": "..."
 }
 ```
 

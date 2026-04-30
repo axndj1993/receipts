@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "receipts"
-version = "0.1.0"
+version = "0.4.0"
 description = "Evidence-audit tool for YouTube videos. Extracts claims, scores by evidence quality, produces a Markdown report."
 readme = "README.md"
 license = {text = "MIT"}

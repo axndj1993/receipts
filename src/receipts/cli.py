@@ -6,6 +6,8 @@ Subcommands:
   audit URL           — full evidence audit, write Markdown report
   batch FILE          — audit a list of URLs (one per line)
   research TOPIC      — find + audit + synthesize the top N videos on a topic
+  install HOST        — auto-write receipts MCP config into an AI host
+                        (claude-code/cursor/cline/codex/continue/zed)
 """
 from __future__ import annotations
 
@@ -15,6 +17,7 @@ import sys
 from pathlib import Path
 
 from . import __version__
+from . import install as _install
 from .audit import audit, SkeletonVetter
 from .fetcher import FetchError, fetch_video
 from .research import ResearchError, research
@@ -105,6 +108,30 @@ def _slug(url: str) -> str:
     return re.sub(r"[^a-zA-Z0-9]+", "_", url).strip("_")[:40]
 
 
+def _cmd_install(args: argparse.Namespace) -> int:
+    try:
+        written = _install.install(
+            args.client,
+            config_path=Path(args.config_path) if args.config_path else None,
+            server_name=args.server_name,
+        )
+    except SystemExit as e:
+        print(f"install failed: {e}", file=sys.stderr)
+        return 2
+    spec = _install.CLIENTS[args.client]
+    print(f"wrote receipts MCP block to {written} ({spec.name})")
+    print("Next:")
+    if args.client == "claude-code":
+        print("  - restart your Claude Code session")
+        print("  - run /mcp to verify 'receipts' is connected")
+    elif args.client in ("cline", "zed"):
+        print(f"  - copy the contents of {written} into your "
+              f"{spec.name.split(' ')[0]} MCP settings")
+    else:
+        print(f"  - restart {spec.name} to pick up the new server")
+    return 0
+
+
 def _cmd_research(args: argparse.Namespace) -> int:
     try:
         report = research(args.topic, n=args.n, domain=args.domain)
@@ -190,6 +217,25 @@ def main(argv: list[str] | None = None) -> int:
     p_rs.add_argument("--output-dir", default=None,
                       help="also write per-video reports + index.json here")
     p_rs.set_defaults(func=_cmd_research)
+
+    p_in = sub.add_parser(
+        "install",
+        help="auto-write receipts MCP config into an AI agent host",
+    )
+    p_in.add_argument(
+        "client",
+        choices=list(_install.CLIENTS.keys()),
+        help="AI agent host (claude-code/cursor/cline/codex/continue/zed)",
+    )
+    p_in.add_argument(
+        "--config-path", default=None,
+        help="explicit MCP config path (default: per-host convention)",
+    )
+    p_in.add_argument(
+        "--server-name", default="receipts",
+        help="MCP server key in mcpServers (default 'receipts')",
+    )
+    p_in.set_defaults(func=_cmd_install)
 
     args = p.parse_args(argv)
     try:
